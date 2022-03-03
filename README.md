@@ -4,6 +4,8 @@
 
 Package fiberware is a collection of fiber middleware
 
+- **Auth** provide an extensible security middleware 
+
 - **Metrics** will use a given Recorder to collect `inflight request`(current parrallel request count)
   , `request duration` and `response size`.
 
