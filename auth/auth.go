@@ -1,12 +1,11 @@
-package middleware
+package auth
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/gol4ng/fiberware/auth"
 )
 
-// Authentication middleware delegate the authentication process to the AuthenticateFunc
-func Authentication(options ...AuthOption) fiber.Handler {
+// New middleware delegate the authentication process to the AuthenticateFunc
+func New(options ...AuthOption) fiber.Handler {
 	config := NewAuthConfig(options...)
 	return func(ctx *fiber.Ctx) error {
 		if err := config.authenticateFunc(ctx); err != nil {
@@ -19,7 +18,7 @@ func Authentication(options ...AuthOption) fiber.Handler {
 	}
 }
 
-type CredentialFinder func(request *fiber.Request) auth.Credential
+type CredentialFinder func(request *fiber.Request) Credential
 type AuthenticateFunc func(ctx *fiber.Ctx) error
 type ErrorHandler func(err error, ctx *fiber.Ctx) error
 
@@ -87,7 +86,7 @@ func NewAuthenticateFunc(options ...AuthFuncOption) AuthenticateFunc {
 			}
 			credential = creds
 		}
-		ctx.SetUserContext(auth.CredentialToContext(userCtx, credential))
+		ctx.SetUserContext(CredentialToContext(userCtx, credential))
 		return nil
 	}
 }
@@ -96,7 +95,7 @@ func NewAuthenticateFunc(options ...AuthFuncOption) AuthenticateFunc {
 type AuthFuncOption func(*AuthFuncConfig)
 
 type AuthFuncConfig struct {
-	authenticator    auth.Authenticator
+	authenticator    Authenticator
 	credentialFinder CredentialFinder
 }
 
@@ -114,12 +113,12 @@ func NewAuthFuncConfig(options ...AuthFuncOption) *AuthFuncConfig {
 	return opts
 }
 
-func DefaultCredentialFinder(request *fiber.Request) auth.Credential {
-	return auth.FromHeader(request)()
+func DefaultCredentialFinder(request *fiber.Request) Credential {
+	return FromHeader(request)()
 }
 
 // WithAuthenticator will configure Authenticator option
-func WithAuthenticator(authenticator auth.Authenticator) AuthFuncOption {
+func WithAuthenticator(authenticator Authenticator) AuthFuncOption {
 	return func(config *AuthFuncConfig) {
 		config.authenticator = authenticator
 	}

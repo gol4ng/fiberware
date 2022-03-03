@@ -1,13 +1,13 @@
-package middleware_test
+package metrics_test
 
 import (
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gol4ng/fiberware/metrics"
+	"github.com/gol4ng/fiberware/metrics/mocks"
 	prom "github.com/gol4ng/fiberware/metrics/prometheus"
-	"github.com/gol4ng/fiberware/middleware"
-	"github.com/gol4ng/fiberware/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -43,7 +43,7 @@ func TestMetrics(t *testing.T) {
 	)
 
 	app.Use(
-		middleware.Metrics(recorder),
+		metrics.New(recorder),
 	)
 
 	handlerCalled := false
@@ -70,7 +70,7 @@ func ExampleMetrics() {
 	app := fiber.New()
 
 	recorder := prom.NewRecorder(prom.Config{}).RegisterOn(nil)
-	app.Use(middleware.Metrics(recorder))
+	app.Use(metrics.New(recorder))
 
 	app.Get("/path", func(ctx *fiber.Ctx) error {
 		return nil

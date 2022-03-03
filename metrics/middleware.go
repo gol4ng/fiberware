@@ -1,4 +1,4 @@
-package middleware
+package metrics
 
 import (
 	"fmt"
@@ -6,11 +6,10 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gol4ng/fiberware/metrics"
 )
 
-func Metrics(recorder metrics.Recorder, options ...metrics.Option) func(ctx *fiber.Ctx) error {
-	config := metrics.NewConfig(options...)
+func New(recorder Recorder, options ...Option) func(ctx *fiber.Ctx) error {
+	config := NewConfig(options...)
 	return func(ctx *fiber.Ctx) error {
 		handlerName := config.IdentifierProvider(ctx.Request())
 		if config.MeasureInflightRequests {

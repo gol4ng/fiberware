@@ -57,7 +57,7 @@ func TestAddHeader(t *testing.T) {
 
 		credSetter := auth.AddHeader(req)
 		credSetter("foo")
-		assert.Equal(t, "foo", req.Header.Peek("Authorization"))
+		assert.Equal(t, "foo", string(req.Header.Peek("Authorization")))
 	})
 }
 

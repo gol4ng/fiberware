@@ -1,4 +1,4 @@
-package middleware_test
+package auth_test
 
 import (
 	"context"
@@ -10,8 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gol4ng/fiberware/auth"
-	"github.com/gol4ng/fiberware/middleware"
-	"github.com/gol4ng/fiberware/mocks"
+	"github.com/gol4ng/fiberware/auth/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,13 +48,13 @@ func TestDefaultCredentialFinder(t *testing.T) {
 			request.Header.Set(fiber.HeaderAuthorization, tt.authorizationHeader)
 			request.Header.Set(auth.XAuthorizationHeader, tt.xAuthorizationHeader)
 
-			assert.Equal(t, auth.Credential(tt.expectedCredential), middleware.DefaultCredentialFinder(request))
+			assert.Equal(t, auth.Credential(tt.expectedCredential), auth.DefaultCredentialFinder(request))
 		})
 	}
 }
 
 func TestDefaultErrorHandler(t *testing.T) {
-	err := middleware.DefaultErrorHandler(errors.New("my_fake_error"), nil)
+	err := auth.DefaultErrorHandler(errors.New("my_fake_error"), nil)
 	e, ok := err.(*fiber.Error)
 
 	assert.True(t, ok)
@@ -63,9 +62,9 @@ func TestDefaultErrorHandler(t *testing.T) {
 	assert.EqualError(t, e, "my_fake_error")
 }
 
-func TestAuthentication(t *testing.T) {
+func TestNew(t *testing.T) {
 	app := fiber.New()
-	app.Use(middleware.Authentication(middleware.WithAuthenticateFunc(func(ctx *fiber.Ctx) error {
+	app.Use(auth.New(auth.WithAuthenticateFunc(func(ctx *fiber.Ctx) error {
 		ctx.SetUserContext(auth.CredentialToContext(ctx.UserContext(), "my_allowed_credential"))
 		return nil
 	})))
@@ -88,9 +87,9 @@ func TestAuthentication(t *testing.T) {
 	assert.Equal(t, "my_allowed_credential", auth.CredentialFromContext(innerContext))
 }
 
-func TestAuthenticationWithoutAuthenticator(t *testing.T) {
+func TestNewWithoutAuthenticator(t *testing.T) {
 	app := fiber.New()
-	app.Use(middleware.Authentication())
+	app.Use(auth.New())
 
 	var innerContext context.Context
 	handlerCalled := false
@@ -111,9 +110,9 @@ func TestAuthenticationWithoutAuthenticator(t *testing.T) {
 	assert.Equal(t, "my_allowed_credential", auth.CredentialFromContext(innerContext))
 }
 
-func TestAuthentication_Error(t *testing.T) {
+func TestNew_Error(t *testing.T) {
 	app := fiber.New()
-	app.Use(middleware.Authentication(middleware.WithAuthenticateFunc(func(ctx *fiber.Ctx) error {
+	app.Use(auth.New(auth.WithAuthenticateFunc(func(ctx *fiber.Ctx) error {
 		return errors.New("my_authenticate_error")
 	})))
 
@@ -136,16 +135,16 @@ func TestAuthentication_Error(t *testing.T) {
 	assert.Equal(t, "my_authenticate_error", string(body))
 }
 
-func TestAuthentication_WithSuccessMiddleware(t *testing.T) {
+func TestNew_WithSuccessMiddleware(t *testing.T) {
 	app := fiber.New()
 
 	successMiddlewareCalled := false
-	app.Use(middleware.Authentication(
-		middleware.WithAuthenticateFunc(func(ctx *fiber.Ctx) error {
+	app.Use(auth.New(
+		auth.WithAuthenticateFunc(func(ctx *fiber.Ctx) error {
 			ctx.SetUserContext(auth.CredentialToContext(ctx.UserContext(), "my_allowed_credential"))
 			return nil
 		}),
-		middleware.WithSuccessMiddleware(func(ctx *fiber.Ctx) error {
+		auth.WithSuccessMiddleware(func(ctx *fiber.Ctx) error {
 			successMiddlewareCalled = true
 			assert.Equal(t, "my_allowed_credential", auth.CredentialFromContext(ctx.UserContext()))
 			return ctx.Next()
@@ -171,15 +170,15 @@ func TestAuthentication_WithSuccessMiddleware(t *testing.T) {
 	assert.Equal(t, "my_allowed_credential", auth.CredentialFromContext(innerContext))
 }
 
-func TestAuthentication_WithErrorHandler(t *testing.T) {
+func TestNew_WithErrorHandler(t *testing.T) {
 	app := fiber.New()
 
 	errorHandlerCalled := false
-	app.Use(middleware.Authentication(
-		middleware.WithAuthenticateFunc(func(ctx *fiber.Ctx) error {
+	app.Use(auth.New(
+		auth.WithAuthenticateFunc(func(ctx *fiber.Ctx) error {
 			return errors.New("my_authenticate_error")
 		}),
-		middleware.WithErrorHandler(func(err error, ctx *fiber.Ctx) error {
+		auth.WithErrorHandler(func(err error, ctx *fiber.Ctx) error {
 			errorHandlerCalled = true
 			assert.EqualError(t, err, "my_authenticate_error")
 			return nil
@@ -207,8 +206,8 @@ func TestNewAuthenticateFunc(t *testing.T) {
 	authenticator := &mocks.Authenticator{}
 	authenticator.On("Authenticate", context.TODO(), "my_allowed_credential").Return("my_authenticate_credential", nil)
 
-	app.Use(middleware.Authentication(
-		middleware.WithAuthenticateFunc(middleware.NewAuthenticateFunc(middleware.WithAuthenticator(authenticator))),
+	app.Use(auth.New(
+		auth.WithAuthenticateFunc(auth.NewAuthenticateFunc(auth.WithAuthenticator(authenticator))),
 	))
 
 	var innerContext context.Context
@@ -234,9 +233,9 @@ func TestNewAuthenticateFunc(t *testing.T) {
 
 func TestNewAuthenticateFunc_WithCredentialFinder(t *testing.T) {
 	app := fiber.New()
-	app.Use(middleware.Authentication(
-		middleware.WithAuthenticateFunc(middleware.NewAuthenticateFunc(
-			middleware.WithCredentialFinder(func(request *fiber.Request) auth.Credential {
+	app.Use(auth.New(
+		auth.WithAuthenticateFunc(auth.NewAuthenticateFunc(
+			auth.WithCredentialFinder(func(request *fiber.Request) auth.Credential {
 				return "my_finded_credential"
 			}),
 		)),
@@ -266,8 +265,8 @@ func TestNewAuthenticateFunc_Error(t *testing.T) {
 	authenticator := &mocks.Authenticator{}
 	authenticator.On("Authenticate", context.TODO(), "").Return("", errors.New("my_authenticator_error"))
 
-	app.Use(middleware.Authentication(middleware.WithAuthenticateFunc(
-		middleware.NewAuthenticateFunc(middleware.WithAuthenticator(authenticator))),
+	app.Use(auth.New(auth.WithAuthenticateFunc(
+		auth.NewAuthenticateFunc(auth.WithAuthenticator(authenticator))),
 	))
 
 	handlerCalled := false
