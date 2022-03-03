@@ -12,9 +12,13 @@ Package fiberware is a collection of fiber middleware
 |**Authentication**|X|
 |**Metrics**|X|
 
-## Installation
+## Auth Installation
 
-`go get -u github.com/gol4ng/fiberware`
+`go get -u github.com/gol4ng/fiberware/auth`
+
+## Metrics Installation
+
+`go get -u github.com/gol4ng/fiberware/metrics`
 
 ## Quick Start
 
@@ -26,14 +30,14 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	prom "github.com/gol4ng/fiberware/metrics/prometheus"
-	"github.com/gol4ng/fiberware/middleware"
+	"github.com/gol4ng/fiberware/metrics"
 )
 
 func main() {
 	app := fiber.New()
 
 	recorder := prom.NewRecorder(prom.Config{}).RegisterOn(nil)
-	app.Use(middleware.Metrics(recorder))
+	app.Use(metrics.New(recorder))
 
 	app.Get("/path", func(ctx *fiber.Ctx) error {
 		return nil
