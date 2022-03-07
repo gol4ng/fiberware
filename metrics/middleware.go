@@ -36,7 +36,6 @@ func New(recorder Recorder, configs ...Config) func(ctx *fiber.Ctx) error {
 }
 
 type Config struct {
-	Recorder Recorder
 	// func that allows you to provide a strategy to identify/group metrics
 	// you can group metrics by request host/url/... or app name ...
 	// by default, we group metrics by request url
